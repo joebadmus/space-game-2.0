@@ -1,5 +1,7 @@
 import pygame
 import os
+import random
+
 pygame.init()
 pygame.font.init()
 
@@ -16,15 +18,24 @@ WalkCount = 0
 MOVE = [pygame.image.load(os.path.join('Assets', 'spaceship_red.png')), pygame.image.load(os.path.join(
     'Assets', 'spaceship_red2.png')), pygame.image.load(os.path.join('Assets', 'spaceship_red3.png'))]
 
-SPACESHIP_PARAMETER1, SPACESHIP_PARAMETER2 = 50, 70
+SPACESHIP_PARAMETER1, SPACESHIP_PARAMETER2 = 70, 70
 
 YELLOW_HIT = pygame.USEREVENT + 1
 RED_HIT = pygame.USEREVENT + 2
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
+ORANGE = (255,165,0) 
+
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+PURPLE = (128,0,128)
+
+RED_RANGE = [RED, ORANGE, YELLOW]
+YELLOW_RANGE = [GREEN, BLUE, PURPLE]
 
 BORDER = pygame.Rect((WIDTH // 2) - 5, 0, 10, HEIGHT)
 
@@ -49,7 +60,7 @@ RED_SPACESHIP = pygame.transform.rotate(pygame.transform.scale(
 BACKGROUND = pygame.image.load(os.path.join('Assets', 'SPACE_BACKGROUND.jpg'))
 
 
-def draw_window(red, yellow, red_bullets, yellow_bullets, red_health, yellow_health):
+def draw_window(red, yellow, red_bullets, yellow_bullets, red_health, yellow_health, BULLET_COLOUR_1, BULLET_COLOUR_2):
     global WalkCount
 
     WINDOW.fill(BLACK)
@@ -69,10 +80,10 @@ def draw_window(red, yellow, red_bullets, yellow_bullets, red_health, yellow_hea
     WINDOW.blit(yellow_health_text, (10, 10))
 
     for bullet in red_bullets:
-        pygame.draw.rect(WINDOW, RED, bullet)
+        pygame.draw.rect(WINDOW, BULLET_COLOUR_1, bullet)
 
     for bullet in yellow_bullets:
-        pygame.draw.rect(WINDOW, YELLOW, bullet)
+        pygame.draw.rect(WINDOW, BULLET_COLOUR_2, bullet)
 
     pygame.display.update()
 
@@ -103,7 +114,7 @@ def sprite_movement(keys, yellow, red, VEL):
         yellow.x += VEL
 
 
-def handle_bullets(yellow_bullets, red_bullets, yellow, red, yellow_health, red_health):
+def handle_bullets(yellow_bullets, red_bullets, yellow, red, yellow_health, red_health, BULLET_COLOUR_1, BULLET_COLOUR_2):
     for bullet in yellow_bullets:
         bullet.x += VEL * 2
         if red.colliderect(bullet):
@@ -114,16 +125,11 @@ def handle_bullets(yellow_bullets, red_bullets, yellow, red, yellow_health, red_
             yellow_bullets.remove(bullet)
 
         elif red_health == 1 and red.colliderect(bullet):
-            red_health == 0
+            red_health = 0
             pygame.time.delay(100)
             pygame.event.post(pygame.event.Event(RED_HIT))
 
             yellow_bullets.remove(bullet)
-            yellow_bullets.remove(bullet)
-            yellow_bullets.remove(bullet)
-
-            red_bullets = []
-            yellow_bullets = []
 
     for bullet in red_bullets:
         bullet.x -= VEL * 2
@@ -135,16 +141,18 @@ def handle_bullets(yellow_bullets, red_bullets, yellow, red, yellow_health, red_
             red_bullets.remove(bullet)
 
         if yellow_health <= 0:
-            yellow_bullets = []
-            red_bullets = []
+            for bullet in red_bullets:
+                red_bullets.remove(bullet)
+
+            for bullet in yellow_bullets:
+                yellow_bullets.remove(bullet)
 
         if red_health <= 0:
-            yellow_bullets = []
-            red_bullets = []
+            for bullet in red_bullets:
+                red_bullets.remove(bullet)
 
-            red_bullets.remove(bullet)
-            red_bullets.remove(bullet)
-            red_bullets.remove(bullet)
+            for bullet in yellow_bullets:
+                yellow_bullets.remove(bullet)
 
 
 def draw_winner(winner_text):
@@ -166,9 +174,14 @@ def main():
     red_health = 10
     yellow_health = 10
 
+
     clock = pygame.time.Clock()
     run = True
     while run:
+
+        BULLET_COLOUR_1 = random.choice(RED_RANGE)
+        BULLET_COLOUR_2 = random.choice(YELLOW_RANGE)
+
         clock.tick(FPS)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -214,13 +227,32 @@ def main():
         sprite_movement(keys, yellow, red, VEL)
 
         draw_window(red, yellow, red_bullets, yellow_bullets,
-                    red_health, yellow_health)
+                    red_health, yellow_health, BULLET_COLOUR_1, BULLET_COLOUR_2)
 
         handle_bullets(yellow_bullets, red_bullets, yellow,
-                       red, yellow_health, red_health)
+                       red, yellow_health, red_health, BULLET_COLOUR_1, BULLET_COLOUR_2)
+    
+    for bullet in red_bullets:
+            red_bullets.remove(bullet)
 
-    main()
+    for bullet in yellow_bullets:
+        yellow_bullets.remove(bullet)
 
 
-if __name__ == "__main__":
-    main()
+def main_menu():
+    title_font = pygame.font.SysFont("comicsans", 70)
+    run = True
+    while run:
+        WINDOW.blit(BACKGROUND, (0,0))
+        title_label = title_font.render("Press the mouse to begin...", 1, (255,255,255))
+        WINDOW.blit(title_label, (WIDTH/2 - title_label.get_width()/2, HEIGHT // 2 - title_label.get_height()//2))
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                main()
+    pygame.quit()
+
+
+main_menu()
